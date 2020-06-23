@@ -37,10 +37,9 @@ def scrape_info():
         article_titles.append(div.find('a'))
     
     article_summary = soup.find('div', attrs={'class': 'article_teaser_body'})
-    print(f"Headline: {article_titles[1].text} Article summary: {article_summary.text}")
+    #print(f"Headline: {article_titles[1].text} Article summary: {article_summary.text}")
     
-    # Close the browser after scraping
-    browser.quit()
+    
 
     #Get Featured Image
     #------------------------------------------
@@ -57,10 +56,52 @@ def scrape_info():
     domain_link = url_featured_image.split("/")
     featured_image_url = f"{domain_link[0]}//{domain_link[2]}{details_link_parsed}"
 
+
+    #Get Weather
+    #------------------------------------------
+    weather_url = "https://twitter.com/marswxreport?lang=en"
+    browser.visit(weather_url)
+    time.sleep(1)
+    html_weather = browser.html
+    soup_weather = BeautifulSoup(html_weather,'html.parser')
+
+    mars_weather = ""
+    mars_weathers = soup_weather.find_all('span')
+    for tag in mars_weathers:
+        #print(tag.text)
+        if "InSight" in tag.text:
+            mars_weather = tag.text
+    #print(f"The weather of mars is: {mars_weather}")
+
+    #Get Mars Facts table
+    #------------------------------------------
+    #Retrieve table
+    facts_url = "https://space-facts.com/mars/"
+    browser.visit(facts_url)
+    time.sleep(1)
+    tables = pd.read_html(facts_url)
+    df = tables[0]
+
+    #Format table and dump to html
+    df.rename(columns={0:"Attribute",1:"Value"},inplace=True)
+    df.set_index("Attribute",inplace=True)
+    html_table = df.to_html(classes="table")
+    html_table.replace('\n', '') #If it looks weird on the page, change to inplace=True 
+    print(html_table)
+    df.to_html('table.html')
+
+
+    #All done, gtfo
+    #------------------------------------------
+    # Close the browser after scraping
+    browser.quit()
+
     # Return results
     mars_info = {'News':
                     {'Headline': article_titles[1].text,
                     'Summary': article_summary.text},
-                'FeaturedImage': featured_image_url
+                'FeaturedImage': featured_image_url,
+                'Weather': mars_weather,
+                'Facts':html_table
                 }
     return mars_info
