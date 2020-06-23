@@ -122,7 +122,7 @@ def scrape_info():
         html_hemisphereImagePage = browser.html
         soup_hemisphereImagePage = BeautifulSoup(html_hemisphereImagePage,'html.parser')
         
-        li = soup_hemisphereImagePage.find_all('li')[1]
+        li = soup_hemisphereImagePage.find_all('li')[0]
 
         hemisphereImageLinks.append(li.a.get('href'))
     
