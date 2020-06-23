@@ -90,6 +90,47 @@ def scrape_info():
     print(html_table)
     df.to_html('table.html')
 
+    #Get Hemisphere Images
+    #------------------------------------------
+    url_hemispheres_start = "https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars"
+    #Grab titles and seperate page links from start page
+    browser.visit(url_hemispheres_start)
+    html_hemisphereStart = browser.html
+    soup_hemisphereStart = BeautifulSoup(html_hemisphereStart,'html.parser')
+    #Grab title, and remove blanks
+    hemisphereImageTitles = []
+    for a in soup_hemisphereStart.find_all('a',href=True, attrs={'class':'itemLink'}):
+        hemisphereImageTitles.append(a.text)
+    hemisphereImageTitles = list(filter(None, hemisphereImageTitles)) 
+    #Grab links from a tags
+    hemisphereLinks = []
+    for a in soup_hemisphereStart.find_all('a',href=True, attrs={'class':'itemLink'}):
+        hemisphereLinks.append(a['href'])
+    #remove duplicates
+    hemisphereLinks = list(dict.fromkeys(hemisphereLinks))
+    #Concatenate base url to get full link
+    domain_link_hemisphere = url_hemispheres_start.split("/")
+    hemisphereLinks = [f"{domain_link_hemisphere[0]}//{domain_link_hemisphere[2]}{url}"  for url in hemisphereLinks ]
+
+    #Loop through links to grab image urls there
+
+    hemisphereImageLinks = []
+
+    for url in hemisphereLinks:
+        browser.visit(url)
+        time.sleep(3)
+        html_hemisphereImagePage = browser.html
+        soup_hemisphereImagePage = BeautifulSoup(html_hemisphereImagePage,'html.parser')
+        
+        li = soup_hemisphereImagePage.find_all('li')[1]
+
+        hemisphereImageLinks.append(li.a.get('href'))
+    
+    #Create list of dicts from the two separate lists
+    hemisphereImages = []
+    hemisphereImages = [{'title' : title, 'img_url':img} for (title,img) in zip(hemisphereImageTitles,hemisphereImageLinks)]
+
+
 
     #All done, gtfo
     #------------------------------------------
@@ -102,6 +143,7 @@ def scrape_info():
                     'Summary': article_summary.text},
                 'FeaturedImage': featured_image_url,
                 'Weather': mars_weather,
-                'Facts':html_table
+                'Facts':html_table,
+                'HemisphereImages':hemisphereImages
                 }
     return mars_info
